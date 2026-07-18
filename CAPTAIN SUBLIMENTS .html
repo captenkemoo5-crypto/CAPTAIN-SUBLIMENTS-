@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAPTAIN SUPPLEMENTS 🔥</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Cairo', sans-serif; background-color: #0b0b0b; color: #ffffff; }
+        .gold-text { color: #d4af37; }
+        .red-bg { background-color: #e53e3e; }
+        .input-style { background: #1a1a1a; border: 1px solid #333; color: white; padding: 10px; border-radius: 8px; width: 100%; }
+        .input-style:focus { border-color: #e53e3e; outline: none; }
+        @media print {
+            body * { visibility: hidden; }
+            #invoice-modal, #invoice-modal * { visibility: visible; }
+            #invoice-modal { position: absolute; left: 0; top: 0; width: 100%; background: white !important; color: black !important; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="border-b border-zinc-800 bg-black p-4 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-black text-white">CAPTAIN <span class="gold-text">SUPPLEMENTS</span> 🔥</h1>
+            <button onclick="document.getElementById('login-section').classList.toggle('hidden')" class="bg-amber-500 text-black px-4 py-2 rounded-lg font-bold hover:bg-amber-600 transition">دخول الكابتن</button>
+        </div>
+    </header>
+
+    <!-- Admin Login Section -->
+    <section id="login-section" class="hidden bg-zinc-900 p-6 border-b border-zinc-800">
+        <div class="max-w-md mx-auto space-y-3">
+            <h3 class="font-bold gold-text text-lg text-center">🔐 تسجيل دخول الكابتن:</h3>
+            <div>
+                <label class="block text-xs text-zinc-400 mb-1">البريد الإلكتروني:</label>
+                <input type="email" id="admin-email" placeholder="أدخل إيميل الكابتن" class="input-style text-left" dir="ltr">
+            </div>
+            <div>
+                <label class="block text-xs text-zinc-400 mb-1">الكود السري:</label>
+                <input type="password" id="admin-password" placeholder="أدخل الكود السري" class="input-style text-left" dir="ltr">
+            </div>
+            <button onclick="checkAdmin()" class="w-full bg-red-600 py-2.5 rounded-lg font-bold hover:bg-red-700 transition">دخول للوحة التحكم</button>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto p-4">
+        <div id="products-container" class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8"></div>
+    </main>
+
+    <!-- Order Modal -->
+    <div id="order-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl w-full max-w-md relative">
+            <button onclick="closeOrderModal()" class="absolute top-4 left-4 text-zinc-400 hover:text-white text-xl">✕</button>
+            <h3 class="text-xl font-bold text-red-500 mb-4" id="modal-product-name">طلب منتج</h3>
+            
+            <form action="https://formspree.io/f/xnqeoozo" method="POST" target="hidden_iframe" onsubmit="handleFormSubmit(event)">
+                <input type="hidden" name="المنتج المطلوب" id="hidden-product-name">
+                <input type="hidden" name="سعر المنتج" id="hidden-product-price">
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs text-zinc-400 mb-1">الإسم بالكامل *</label>
+                        <input type="text" id="customer-name" name="اسم العميل" required class="input-style" placeholder="أدخل اسمك الثنائي أو الثلاثي">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-zinc-400 mb-1">رقم الهاتف *</label>
+                        <input type="tel" id="customer-phone" name="رقم الهاتف" required class="input-style text-left" dir="ltr" placeholder="01xxxxxxxxx">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-zinc-400 mb-1">العنوان بالتفصيل *</label>
+                        <input type="text" id="customer-address" name="العنوان" required class="input-style" placeholder="المحافظة / المدينة / اسم الشارع">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs text-zinc-400 mb-2">طريقة الدفع *</label>
+                        <div class="grid grid-cols-1 gap-2">
+                            <label class="flex items-center gap-3 p-3 bg-zinc-950 rounded-lg border border-zinc-800 cursor-pointer hover:border-red-500">
+                                <input type="radio" name="طريقة الدفع" value="الدفع عند الاستلام" required checked onchange="toggleWalletDetails(false)" class="accent-red-500">
+                                <div>
+                                    <p class="text-sm font-bold">الدفع عند الإستلام</p>
+                                    <p class="text-xs text-zinc-500">(+15 ج م مصاريف شحن)</p>
+                                </div>
+                            </label>
+                            <label class="flex items-center gap-3 p-3 bg-zinc-950 rounded-lg border border-zinc-800 cursor-pointer hover:border-amber-500">
+                                <input type="radio" name="طريقة الدفع" value="فودافون كاش" required onchange="toggleWalletDetails(true)" class="accent-amber-500">
+                                <div>
+                                    <p class="text-sm font-bold text-amber-500">تحويل محفظة (فودافون كاش)</p>
+                                    <p class="text-xs text-zinc-500">تحويل فوري قبل الشحن</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="wallet-info" class="hidden bg-black p-3 rounded-lg border border-amber-500/30 text-center space-y-1">
+                        <p class="text-xs text-zinc-400">يرجى تحويل المبلغ إلى الرقم التالي:</p>
+                        <p class="text-lg font-black text-amber-400 tracking-wider">01107846566</p>
+                    </div>
+
+                    <button type="submit" class="w-full bg-amber-500 text-black py-3 rounded-xl font-black text-lg hover:bg-amber-600 transition mt-2">
+                        تأكيد وإرسال الطلب ⚡
+                    </button>
+                </div>
+            </form>
+            <!-- iframe خفي لمنع فتح صفحة خارجية بعد إرسال الفورم -->
+            <iframe name="hidden_iframe" id="hidden_iframe" class="hidden"></iframe>
+        </div>
+    </div>
+
+    <!-- نافذة الفاتورة الاحترافية المنسقة -->
+    <div id="invoice-modal" class="fixed inset-0 bg-black/90 z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-zinc-900 border-2 border-amber-500/40 p-6 rounded-2xl w-full max-w-md shadow-2xl text-right text-white space-y-6">
+            
+            <div class="text-center border-b border-zinc-800 pb-4">
+                <h2 class="text-2xl font-black tracking-wider">CAPTAIN <span class="gold-text">SUPPLEMENTS</span> 🔥</h2>
+                <p class="text-xs text-zinc-400 mt-1">فاتورة شراء رقم تلقائي: #<span id="inv-id"></span></p>
+            </div>
+
+            <div>
+                <h4 class="text-xs font-bold text-zinc-400 uppercase mb-2">👤 بيانات العميل:</h4>
+                <p class="text-sm font-bold">الاسم: <span id="inv-name" class="text-white"></span></p>
+                <p class="text-sm">الهاتف: <span id="inv-phone" class="text-zinc-300"></span></p>
+                <p class="text-sm">العنوان: <span id="inv-address" class="text-zinc-300"></span></p>
+            </div>
+
+            <div class="border-t border-b border-zinc-800 py-4">
+                <h4 class="text-xs font-bold text-zinc-400 mb-3">📦 المنتج المطلوب:</h4>
+                <div class="flex items-center gap-4 bg-black p-3 rounded-xl border border-zinc-800">
+                    <img id="inv-prod-img" src="" class="w-16 h-16 object-cover rounded-lg border border-zinc-700">
+                    <div>
+                        <p class="text-sm font-bold text-white" id="inv-prod-name"></p>
+                        <p class="text-amber-500 font-black text-md mt-1" id="inv-prod-price"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center text-sm">
+                <span class="text-zinc-400">طريقة الدفع:</span>
+                <span class="font-bold text-white bg-zinc-800 px-3 py-1 rounded-full text-xs border border-zinc-700" id="inv-method"></span>
+            </div>
+
+            <div class="bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl flex justify-between items-center text-md font-black">
+                <span class="gold-text">الحساب الإجمالي:</span>
+                <span class="text-white" id="inv-final-total"></span>
+            </div>
+
+            <div class="flex gap-2 pt-2 no-print">
+                <button onclick="window.print()" class="flex-1 bg-amber-500 text-black py-2.5 rounded-xl font-bold hover:bg-amber-600 transition text-sm">
+                    🖨️ طباعة أو حفظ الفاتورة
+                </button>
+                <button onclick="closeInvoiceModal()" class="bg-zinc-800 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-zinc-700 transition">
+                    إغلاق
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="admin-panel" class="hidden fixed inset-0 bg-black z-50 p-8 overflow-y-auto">
+        <div class="max-w-4xl mx-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-black gold-text">لوحة تحكم الكابتن</h2>
+                <button onclick="document.getElementById('admin-panel').classList.add('hidden')" class="bg-zinc-800 px-4 py-2 rounded-lg text-sm font-bold">إغلاق اللوحة ✕</button>
+            </div>
+            
+            <div class="bg-zinc-900 p-6 rounded-xl mb-8 border border-zinc-800">
+                <h3 class="font-bold mb-4 text-red-500">➕ إضافة منتج جديد:</h3>
+                <form onsubmit="event.preventDefault(); addProduct();" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="text" id="new-name" placeholder="اسم المنتج" required class="input-style">
+                    <input type="number" id="new-price" placeholder="السعر الأصلي" required class="input-style">
+                    <input type="number" id="new-discount" placeholder="السعر بعد الخصم (اختياري)" class="input-style">
+                    <input type="file" id="new-image" required class="input-style">
+                    <textarea id="new-desc" placeholder="وصف المنتج" required class="input-style md:col-span-2"></textarea>
+                    <button type="submit" class="md:col-span-2 bg-green-600 py-3 rounded-lg font-bold hover:bg-green-700 transition">إضافة وحفظ المنتج</button>
+                </form>
+            </div>
+            
+            <h3 class="font-bold mb-4 gold-text">✏️ المنتجات الحالية:</h3>
+            <div id="edit-list" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <script>
+        const demoProducts = [
+            { id: 1, name: "Whey Protein Gold Standard", price: "3400", discount: "2950", desc: "واي بروتين نقي 100% لبناء العضلات الصافية وضمان أسرع استشفاء عضلي.", img: "https://images.unsplash.com/photo-1579758629938-03607ccdbaba?w=500" },
+            { id: 2, name: "Creatine Monohydrate 300g", price: "1200", discount: "", desc: "كرياتين ميكرونيزد نقي لزيادة القوة الانفجارية والباور داخل التمرين.", img: "https://images.unsplash.com/photo-1593095948071-474c5cc2989d?w=500" }
+        ];
+
+        let products = JSON.parse(localStorage.getItem('my_products')) || demoProducts;
+        if (!localStorage.getItem('my_products')) {
+            localStorage.setItem('my_products', JSON.stringify(products));
+        }
+
+        let selectedProductId = null;
+
+        function checkAdmin() {
+            const email = document.getElementById('admin-email').value.trim();
+            const password = document.getElementById('admin-password').value.trim();
+
+            if(email === "captenkemoo5@gmail.com" && password === "1772009") {
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('admin-panel').classList.remove('hidden');
+                renderAdmin();
+            } else { 
+                alert("❌ عذراً يا كابتن! البريد الإلكتروني أو الكود السري غير صحيح."); 
+            }
+        }
+
+        function addProduct() {
+            const reader = new FileReader();
+            const file = document.getElementById('new-image').files[0];
+            
+            if(!file) { alert("يرجى اختيار صورة للمنتج أولاً!"); return; }
+
+            reader.onload = () => {
+                products.push({
+                    id: Date.now(),
+                    name: document.getElementById('new-name').value,
+                    price: document.getElementById('new-price').value,
+                    discount: document.getElementById('new-discount').value,
+                    desc: document.getElementById('new-desc').value,
+                    img: reader.result
+                });
+                localStorage.setItem('my_products', JSON.stringify(products));
+                render();
+                renderAdmin();
+                alert("✅ تم إضافة المنتج للمتجر بنجاح!");
+                
+                document.getElementById('new-name').value = '';
+                document.getElementById('new-price').value = '';
+                document.getElementById('new-discount').value = '';
+                document.getElementById('new-desc').value = '';
+                document.getElementById('new-image').value = '';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function openOrderModal(id) {
+            const prod = products.find(p => p.id === id);
+            if(prod) {
+                selectedProductId = id;
+                const finalPrice = prod.discount ? prod.discount : prod.price;
+                document.getElementById('modal-product-name').innerText = `🛒 طلب منتج: ${prod.name}`;
+                document.getElementById('hidden-product-name').value = prod.name;
+                document.getElementById('hidden-product-price').value = finalPrice + " ج.م";
+                document.getElementById('order-modal').classList.remove('hidden');
+            }
+        }
+
+        function closeOrderModal() {
+            document.getElementById('order-modal').classList.add('hidden');
+            toggleWalletDetails(false);
+        }
+
+        function toggleWalletDetails(show) {
+            const walletInfo = document.getElementById('wallet-info');
+            if (show) walletInfo.classList.remove('hidden');
+            else walletInfo.classList.add('hidden');
+        }
+
+        // معالجة البيانات وبناء الفاتورة فورياً بعد تأكيد الطلب
+        function handleFormSubmit(event) {
+            alert('🚀 تم إرسال طلبك بنجاح وجاري تجهيز الفاتورة الخاصة بك..');
+            
+            const name = document.getElementById('customer-name').value;
+            const phone = document.getElementById('customer-phone').value;
+            const address = document.getElementById('customer-address').value;
+            const method = document.querySelector('input[name="طريقة الدفع"]:checked').value;
+            const prod = products.find(p => p.id === selectedProductId);
+
+            if(prod) {
+                const basePrice = prod.discount ? Number(prod.discount) : Number(p.price);
+                const finalTotal = method === "الدفع عند الاستلام" ? (basePrice + 15) : basePrice;
+
+                // تعبئة الفاتورة
+                document.getElementById('inv-id').innerText = Math.floor(Math.random() * 90000) + 10000;
+                document.getElementById('inv-name').innerText = name;
+                document.getElementById('inv-phone').innerText = phone;
+                document.getElementById('inv-address').innerText = address;
+                document.getElementById('inv-prod-name').innerText = prod.name;
+                document.getElementById('inv-prod-img').src = prod.img;
+                document.getElementById('inv-prod-price').innerText = basePrice + " ج.م";
+                document.getElementById('inv-method').innerText = method;
+                document.getElementById('inv-final-total').innerText = finalTotal + " ج.م";
+
+                // فتح الفاتورة وإغلاق نافذة الدفع
+                closeOrderModal();
+                document.getElementById('invoice-modal').classList.remove('hidden');
+            }
+        }
+
+        function closeInvoiceModal() {
+            document.getElementById('invoice-modal').classList.add('hidden');
+        }
+
+        function render() {
+            const container = document.getElementById('products-container');
+            container.innerHTML = products.map(p => {
+                const hasDiscount = p.discount && Number(p.discount) < Number(p.price);
+                return `
+                    <div class="bg-zinc-900/80 rounded-2xl border border-zinc-800 overflow-hidden flex flex-col justify-between p-4 hover:border-zinc-700 transition">
+                        <div>
+                            <img src="${p.img}" class="h-44 w-full object-cover rounded-xl mb-4">
+                            <h2 class="text-xl font-bold mb-1">${p.name}</h2>
+                            <p class="text-xs text-zinc-400 line-clamp-3 mb-3">${p.desc}</p>
+                        </div>
+                        <div>
+                            <div class="mb-4 font-black text-lg">
+                                ${hasDiscount ? `
+                                    <span class="text-red-500">${p.discount} ج.م</span> 
+                                    <span class="line-through text-zinc-600 text-sm mr-2">${p.price} ج.م</span>
+                                ` : `
+                                    <span class="gold-text">${p.price} ج.م</span>
+                                `}
+                            </div>
+                            <button onclick="openOrderModal(${p.id})" class="w-full bg-red-600 text-white font-bold py-2.5 rounded-xl hover:bg-red-700 transition text-sm">
+                                اطلب الآن 🛒
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderAdmin() {
+            const list = document.getElementById('edit-list');
+            list.innerHTML = products.map(p => `
+                <div class="bg-zinc-800 p-4 rounded-xl flex justify-between items-center border border-zinc-700">
+                    <div class="flex items-center gap-3">
+                        <img src="${p.img}" class="w-10 h-10 object-cover rounded">
+                        <span class="font-bold text-sm">${p.name}</span>
+                    </div>
+                    <span class="text-xs text-zinc-400">${p.discount ? p.discount : p.price} ج.م</span>
+                </div>
+            `).join('');
+        }
+
+        render();
+    </script>
+</body>
+</html>
