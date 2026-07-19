@@ -57,20 +57,23 @@
             </div>
             
             <div class="bg-zinc-900 p-6 rounded-xl mb-8 border border-zinc-800">
-                <h3 class="font-bold mb-4 text-red-500" id="form-title">➕ إضافة منتج جديد لمتجرك:</h3>
+                <h3 class="font-bold mb-4 text-red-500">➕ إضافة منتج جديد لمتجرك:</h3>
                 <div id="product-form-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="text" id="new-name" placeholder="اسم المنتج (مثال: واي بروتين)" class="input-style">
-                    <input type="number" id="new-price" placeholder="السعر (مثال: 2500)" class="input-style">
-                    <input type="text" id="new-image-url" placeholder="رابط صورة المنتج من النت (اختياري)" class="input-style" dir="ltr">
-                    <input type="text" id="new-discount" placeholder="وصف قصير جداً (مثال: جامد جداً)" class="input-style">
-                    <textarea id="new-desc" placeholder="وصف المنتج بالتفصيل والأوزان المتوفرة..." class="input-style md:col-span-2"></textarea>
+                    <input type="text" id="new-name" placeholder="اسم المنتج" class="input-style">
+                    <input type="number" id="new-price" placeholder="السعر" class="input-style">
+                    <input type="text" id="new-discount" placeholder="وصف قصير جداً (مثال: خصم 10%)" class="input-style">
+                    <div>
+                        <label class="block text-xs text-zinc-400 mb-1">📸 اختر صورة المنتج من جهازك:</label>
+                        <input type="file" id="new-image-file" accept="image/*" class="input-style">
+                    </div>
+                    <textarea id="new-desc" placeholder="وصف المنتج بالتفصيل..." class="input-style md:col-span-2"></textarea>
                     <div class="md:col-span-2 flex gap-2">
-                        <button type="button" id="save-product-btn" class="w-full bg-green-600 py-3 rounded-lg font-bold hover:bg-green-700 transition text-white">إضافة وحفظ المنتج في السحاب ⚡</button>
+                        <button type="button" id="save-product-btn" class="w-full bg-green-600 py-3 rounded-lg font-bold hover:bg-green-700 transition text-white">إضافة وحفظ المنتج بالصورة ⚡</button>
                     </div>
                 </div>
             </div>
             
-            <h3 class="font-bold mb-4 gold-text">✏️ التحكم بالمنتجات المعروضة وتصفيرها:</h3>
+            <h3 class="font-bold mb-4 gold-text">✏️ المنتجات المعروضة حالياً:</h3>
             <div id="edit-list" class="space-y-4"></div>
         </div>
     </div>
@@ -92,7 +95,7 @@
         const db = firebase.database().ref('products');
         let products = [];
 
-        // جلب البيانات فورا وعرضها بالمتجر
+        // جلب البيانات فورا
         db.on('value', (snapshot) => {
             const data = snapshot.val();
             products = [];
@@ -105,62 +108,88 @@
             renderAdminList();
         });
 
-        // تشغيل أزرار التنقل والتحقق
+        // أزرار التنقل
         document.getElementById('open-login-btn').addEventListener('click', () => {
             document.getElementById('login-page').classList.remove('hidden');
         });
-
         document.getElementById('close-login-btn').addEventListener('click', () => {
             document.getElementById('login-page').classList.add('hidden');
+        });
+        document.getElementById('exit-admin-btn').addEventListener('click', () => {
+            document.getElementById('admin-panel').classList.add('hidden');
         });
 
         document.getElementById('submit-login-btn').addEventListener('click', (e) => {
             e.preventDefault();
             const email = document.getElementById('admin-email').value.trim();
             const password = document.getElementById('admin-password').value.trim();
-
             if (email === "captenkemoo5@gmail.com" && password === "1772009") {
                 document.getElementById('login-page').classList.add('hidden');
                 document.getElementById('admin-panel').classList.remove('hidden');
             } else { 
-                alert("❌ عذراً يا كابتن! البيانات غير صحيحة."); 
+                alert("❌ عذراً البيانات غير صحيحة."); 
             }
         });
 
-        document.getElementById('exit-admin-btn').addEventListener('click', () => {
-            document.getElementById('admin-panel').classList.add('hidden');
-        });
-
-        // إضافة منتج جديد مستقر وسريع بـ رابط الصورة
+        // حفظ المنتج مع ضغط الصورة تلقائياً لحل مشكلة الرفض
         document.getElementById('save-product-btn').addEventListener('click', () => {
             const name = document.getElementById('new-name').value.trim();
             const price = document.getElementById('new-price').value.trim();
-            let img = document.getElementById('new-image-url').value.trim();
             const discount = document.getElementById('new-discount').value.trim();
             const desc = document.getElementById('new-desc').value.trim();
-            
-            if(!name || !price) { alert("اكتب اسم المنتج وسعره يا كابتن!"); return; }
+            const fileInput = document.getElementById('new-image-file');
 
-            // لو محطش رابط صورة، حط الصورة الافتراضية الشيك دي تلقائي
-            if(!img) {
-                img = "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=500";
+            if(!name || !price) { alert("اكتب اسم المنتج وسعره!"); return; }
+
+            const defaultImg = "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=500";
+
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                const reader = new FileReader();
+                
+                reader.onload = function(event) {
+                    const imgElement = new Image();
+                    imgElement.src = event.target.result;
+                    
+                    imgElement.onload = function() {
+                        // عملية تصغير وتكثيف حجم الصورة برمجياً لتقبلها قاعدة البيانات
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 400; 
+                        const scaleSize = MAX_WIDTH / imgElement.width;
+                        canvas.width = MAX_WIDTH;
+                        canvas.height = imgElement.height * scaleSize;
+                        
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(imgElement, 0, 0, canvas.width, canvas.height);
+                        
+                        // تحويل الصورة لكود خفيف جداً
+                        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
+                        
+                        // الرفع للفايربيز
+                        uploadData(name, price, compressedDataUrl, discount, desc);
+                    }
+                };
+                reader.readAsDataURL(file);
+            } else {
+                uploadData(name, price, defaultImg, discount, desc);
             }
+        });
 
-            db.push({
-                name, price, img, discount, desc
-            }).then(() => {
-                alert("✅ تم الحفظ في قاعدة البيانات بنجاح وظهور الصورة فوراً!");
+        function uploadData(name, price, img, discount, desc) {
+            db.push({ name, price, img, discount, desc })
+            .then(() => {
+                alert("✅ تم رفع المنتج وحفظ الصورة المرفوعة بنجاح!");
                 document.querySelectorAll('#product-form-container input, #product-form-container textarea').forEach(i => i.value = '');
             });
-        });
+        }
 
         function renderStore() {
             const container = document.getElementById('products-container');
-            if (products.length === 0) { container.innerHTML = `<div class="col-span-full text-center py-12 text-zinc-500">المتجر فارغ حالياً. ادخل لوحتك وأضف أول منتج!</div>`; return; }
+            if (products.length === 0) { container.innerHTML = `<div class="col-span-full text-center py-12 text-zinc-500">المتجر فارغ حالياً.</div>`; return; }
             container.innerHTML = products.map(p => `
                 <div class="bg-zinc-900/80 rounded-2xl border border-zinc-800 p-4 flex flex-col justify-between">
                     <div>
-                        <img src="${p.img}" class="h-44 w-full object-cover rounded-xl mb-4 border border-zinc-800" onerror="this.src='https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=500'">
+                        <img src="${p.img}" class="h-44 w-full object-cover rounded-xl mb-4 border border-zinc-800">
                         <div class="flex justify-between items-start gap-2 mb-1">
                             <h2 class="text-xl font-bold">${p.name}</h2>
                             ${p.discount ? `<span class="bg-amber-500/10 text-amber-500 text-xs px-2 py-1 rounded-md border border-amber-500/20 font-bold shrink-0">${p.discount}</span>` : ''}
@@ -169,7 +198,7 @@
                     </div>
                     <div>
                         <div class="mb-4 font-black text-xl text-amber-500">${p.price} ج.م</div>
-                        <button class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-sm transition">اطلب الآن 🛒</button>
+                        <button class="w-full bg-red-600 text-white font-bold py-2.5 rounded-xl text-sm">اطلب الآن 🛒</button>
                     </div>
                 </div>
             `).join('');
@@ -177,14 +206,14 @@
 
         function renderAdminList() {
             const list = document.getElementById('edit-list');
-            if (products.length === 0) { list.innerHTML = `<p class="text-center py-6 text-zinc-500 text-sm">لا توجد منتجات حالياً.</p>`; return; }
+            if (products.length === 0) { list.innerHTML = `<p class="text-center py-6 text-zinc-500 text-sm">لا توجد منتجات.</p>`; return; }
             list.innerHTML = products.map(p => `
                 <div class="bg-zinc-900 p-4 rounded-xl flex justify-between items-center border border-zinc-800">
                     <div class="flex items-center gap-3">
-                        <img src="${p.img}" class="w-10 h-10 object-cover rounded-lg" onerror="this.src='https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=500'">
+                        <img src="${p.img}" class="w-10 h-10 object-cover rounded-lg">
                         <span class="font-bold text-sm text-white">${p.name} - ${p.price} ج.م</span>
                     </div>
-                    <button onclick="firebase.database().ref('products/${p.id}').remove()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition">🗑️ حذف المنتج</button>
+                    <button onclick="firebase.database().ref('products/${p.id}').remove()" class="bg-red-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold">🗑️ حذف</button>
                 </div>
             `).join('');
         }
