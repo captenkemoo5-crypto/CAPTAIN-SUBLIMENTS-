@@ -79,6 +79,9 @@
     </div>
 
     <script>
+        // رقم الواتساب الخاص بك بالصيغة الدولية الصحيحة جاهز
+        const whatsappNumber = "201113082814";
+
         // إعدادات الفايربيز
         const firebaseConfig = {
             apiKey: "AIzaSyDyORP3RHX4CBGP8uNRHC7oJ3ER2l380xA",
@@ -131,7 +134,7 @@
             }
         });
 
-        // حفظ المنتج مع ضغط الصورة تلقائياً لحل مشكلة الرفض
+        // حفظ المنتج مع ضغط الصورة تلقائياً
         document.getElementById('save-product-btn').addEventListener('click', () => {
             const name = document.getElementById('new-name').value.trim();
             const price = document.getElementById('new-price').value.trim();
@@ -152,7 +155,6 @@
                     imgElement.src = event.target.result;
                     
                     imgElement.onload = function() {
-                        // عملية تصغير وتكثيف حجم الصورة برمجياً لتقبلها قاعدة البيانات
                         const canvas = document.createElement('canvas');
                         const MAX_WIDTH = 400; 
                         const scaleSize = MAX_WIDTH / imgElement.width;
@@ -162,10 +164,7 @@
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(imgElement, 0, 0, canvas.width, canvas.height);
                         
-                        // تحويل الصورة لكود خفيف جداً
                         const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
-                        
-                        // الرفع للفايربيز
                         uploadData(name, price, compressedDataUrl, discount, desc);
                     }
                 };
@@ -178,9 +177,17 @@
         function uploadData(name, price, img, discount, desc) {
             db.push({ name, price, img, discount, desc })
             .then(() => {
-                alert("✅ تم رفع المنتج وحفظ الصورة المرفوعة بنجاح!");
+                alert("✅ تم رفع المنتج وحفظ الصورة بنجاح!");
                 document.querySelectorAll('#product-form-container input, #product-form-container textarea').forEach(i => i.value = '');
             });
+        }
+
+        // فتح محادثة الواتساب فوراً بالرسالة التلقائية
+        window.orderProduct = function(name, price) {
+            const message = `يا كابتن، عايز أطلب منتج: *${name}* بسعر: *${price} ج.م* 🔥 
+متاح تفاصيل التوصيل؟`;
+            const encodedMessage = encodeURIComponent(message);
+            window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, '_blank');
         }
 
         function renderStore() {
@@ -198,7 +205,7 @@
                     </div>
                     <div>
                         <div class="mb-4 font-black text-xl text-amber-500">${p.price} ج.م</div>
-                        <button class="w-full bg-red-600 text-white font-bold py-2.5 rounded-xl text-sm">اطلب الآن 🛒</button>
+                        <button onclick="orderProduct('${p.name}', '${p.price}')" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-sm transition">اطلب الآن 🛒</button>
                     </div>
                 </div>
             `).join('');
