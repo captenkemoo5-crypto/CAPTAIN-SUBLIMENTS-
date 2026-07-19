@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAPTAIN SUPPLEMENTS 🔥</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght=400;700;900&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        body { font-family: 'Cairo', sans-serif; background-color: #0b0b0b; color: #ffffff; }
+        .gold-text { color: #d4af37; }
+        .input-style { background: #1a1a1a; border: 1px solid #333; color: white; padding: 10px; border-radius: 8px; width: 100%; }
+        .input-style:focus { border-color: #e53e3e; outline: none; }
+    </style>
+</head>
+<body>
+
+    <div id="main-store-page">
+        <header class="border-b border-zinc-800 bg-black p-4 sticky top-0 z-50">
+            <div class="max-w-6xl mx-auto flex justify-between items-center">
+                <h1 class="text-2xl font-black text-white">CAPTAIN <span class="gold-text">SUPPLEMENTS</span> 🔥</h1>
+                <button type="button" id="open-login-btn" class="bg-amber-500 text-black px-4 py-2 rounded-lg font-bold hover:bg-amber-600 transition">دخول الكابتن</button>
+            </div>
+        </header>
+        <main class="max-w-6xl mx-auto p-4">
+            <div id="products-container" class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8"></div>
+        </main>
+    </div>
+
+    <div id="login-page" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+        <div class="bg-zinc-900 p-8 rounded-2xl border border-zinc-800 w-full max-w-md space-y-4 shadow-xl">
+            <h3 class="font-bold gold-text text-xl text-center">🔐 تسجيل دخول لوحة التحكم</h3>
+            <div>
+                <label class="block text-xs text-zinc-400 mb-1">البريد الإلكتروني:</label>
+                <input type="email" id="admin-email" placeholder="أدخل إيميل الكابتن" class="input-style text-left" dir="ltr">
+            </div>
+            <div>
+                <label class="block text-xs text-zinc-400 mb-1">الكود السري:</label>
+                <input type="password" id="admin-password" placeholder="أدخل الكود السري" class="input-style text-left" dir="ltr">
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button type="button" id="submit-login-btn" class="flex-1 bg-red-600 py-2.5 rounded-lg font-bold hover:bg-red-700 transition text-white">دخول</button>
+                <button type="button" id="close-login-btn" class="bg-zinc-800 px-4 py-2.5 rounded-lg font-bold hover:bg-zinc-700 transition text-sm">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="admin-panel" class="hidden fixed inset-0 bg-black z-50 p-8 overflow-y-auto">
+        <div class="max-w-4xl mx-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-black gold-text">لوحة تحكم الكابتن كيمو 👑</h2>
+                <button type="button" id="exit-admin-btn" class="bg-zinc-800 px-4 py-2 rounded-lg text-sm font-bold hover:bg-zinc-700 transition">إغلاق اللوحة ✕</button>
+            </div>
+            
+            <div class="bg-zinc-900 p-6 rounded-xl mb-8 border border-zinc-800">
+                <h3 class="font-bold mb-4 text-red-500" id="form-title">➕ إضافة منتج جديد لمتجرك:</h3>
+                <div id="product-form-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="hidden" id="edit-id">
+                    <input type="text" id="new-name" placeholder="اسم المنتج" class="input-style">
+                    <input type="number" id="new-price" placeholder="السعر الأصلي" class="input-style">
+                    <input type="number" id="new-discount" placeholder="السعر بعد الخصم (اختياري)" class="input-style">
+                    <div>
+                        <label class="block text-xs text-zinc-400 mb-1">صورة المنتج</label>
+                        <input type="file" id="new-image" class="input-style">
+                    </div>
+                    <textarea id="new-desc" placeholder="وصف المنتج" class="input-style md:col-span-2"></textarea>
+                    <div class="md:col-span-2 flex gap-2">
+                        <button type="button" id="save-product-btn" class="flex-1 bg-green-600 py-3 rounded-lg font-bold">إضافة وحفظ المنتج في السحاب</button>
+                    </div>
+                </div>
+            </div>
+            
+            <h3 class="font-bold mb-4 gold-text">✏️ المنتجات المعروضة حالياً:</h3>
+            <div id="edit-list" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <script>
+        // إعدادات الفايربيز الخاصة بكابتن مكملات
+        const firebaseConfig = {
+            apiKey: "AIzaSyDyORP3RHX4CBGP8uNRHC7oJ3ER2l380xA",
+            authDomain: "captain-supplements.firebaseapp.com",
+            databaseURL: "https://captain-supplements-default-rtdb.firebaseio.com",
+            projectId: "captain-supplements",
+            storageBucket: "captain-supplements.firebasestorage.app",
+            messagingSenderId: "82762250751",
+            appId: "1:82762250751:web:5a73b0a72c437e10014fca",
+            measurementId: "G-8HQ2M07283"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database().ref('products');
+        let products = [];
+
+        // جلب البيانات فورا وعرضها بالمتجر
+        db.on('value', (snapshot) => {
+            const data = snapshot.val();
+            products = [];
+            if (data) {
+                for (let id in data) {
+                    products.push({ id, ...data[id] });
+                }
+            }
+            renderStore();
+            renderAdminList();
+        });
+
+        // تشغيل أزرار التنقل والتحقق بطريقة Event Listeners المضمونة لـ CodePen
+        document.getElementById('open-login-btn').addEventListener('click', () => {
+            document.getElementById('login-page').classList.remove('hidden');
+        });
+
+        document.getElementById('close-login-btn').addEventListener('click', () => {
+            document.getElementById('login-page').classList.add('hidden');
+        });
+
+        // الزرار الأحمر القاتل تم إصلاحه هنا بالربط المباشر المنيع ضد البلوك
+        document.getElementById('submit-login-btn').addEventListener('click', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('admin-email').value.trim();
+            const password = document.getElementById('admin-password').value.trim();
+
+            if (email === "captenkemoo5@gmail.com" && password === "1772009") {
+                document.getElementById('login-page').classList.add('hidden');
+                document.getElementById('admin-panel').classList.remove('hidden');
+            } else { 
+                alert("❌ عذراً يا كابتن! البيانات غير صحيحة."); 
+            }
+        });
+
+        document.getElementById('exit-admin-btn').addEventListener('click', () => {
+            document.getElementById('admin-panel').classList.add('hidden');
+        });
+
+        // إضافة منتج جديد
+        document.getElementById('save-product-btn').addEventListener('click', () => {
+            const name = document.getElementById('new-name').value.trim();
+            const price = document.getElementById('new-price').value.trim();
+            const discount = document.getElementById('new-discount').value.trim();
+            const desc = document.getElementById('new-desc').value.trim();
+            
+            if(!name || !price) { alert("اكتب اسم المنتج وسعره يا كابتن!"); return; }
+
+            db.push({
+                name, price, discount, desc,
+                img: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=500"
+            }).then(() => {
+                alert("✅ تم الحفظ في قاعدة البيانات بنجاح!");
+                document.querySelectorAll('#product-form-container input, #product-form-container textarea').forEach(i => i.value = '');
+            });
+        });
+
+        function renderStore() {
+            const container = document.getElementById('products-container');
+            if (products.length === 0) { container.innerHTML = `<div class="col-span-full text-center py-12 text-zinc-500">المتجر فارغ حالياً. ادخل لوحتك وأضف أول منتج!</div>`; return; }
+            container.innerHTML = products.map(p => `
+                <div class="bg-zinc-900/80 rounded-2xl border border-zinc-800 p-4 flex flex-col justify-between">
+                    <img src="${p.img}" class="h-44 w-full object-cover rounded-xl mb-4">
+                    <h2 class="text-xl font-bold mb-1">${p.name}</h2>
+                    <p class="text-xs text-zinc-400 mb-3">${p.desc}</p>
+                    <div class="mb-4 font-black text-lg text-amber-500">${p.price} ج.م</div>
+                    <button class="w-full bg-red-600 text-white font-bold py-2.5 rounded-xl text-sm">اطلب الآن 🛒</button>
+                </div>
+            `).join('');
+        }
+
+        function renderAdminList() {
+            const list = document.getElementById('edit-list');
+            if (products.length === 0) { list.innerHTML = `<p class="text-center py-6 text-zinc-500 text-sm">لا توجد منتجات حالياً.</p>`; return; }
+            list.innerHTML = products.map(p => `
+                <div class="bg-zinc-900 p-4 rounded-xl flex justify-between items-center border border-zinc-800">
+                    <span class="font-bold text-sm">${p.name} - ${p.price} ج.م</span>
+                    <button onclick="firebase.database().ref('products/${p.id}').remove()" class="bg-red-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold">🗑️ حذف</button>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
